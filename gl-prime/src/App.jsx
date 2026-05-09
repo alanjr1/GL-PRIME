@@ -1,3 +1,4 @@
+import logo from './assets/logo.png'
 import { useState } from 'react'
 
 export default function GLPrimeGroupSite() {
@@ -8,12 +9,11 @@ export default function GLPrimeGroupSite() {
       <header className="fixed top-0 left-0 w-full bg-[#071B3B]/95 backdrop-blur-md z-50 shadow-lg">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
           <div>
-            <h1 className="text-2xl font-bold text-white tracking-wide">
-              GL PRIME GROUP
-            </h1>
-            <p className="text-xs text-yellow-400 tracking-widest">
-              Energia Solar Inteligente
-            </p>
+         <img
+            src={logo}
+            alt="GL Prime Group"
+           className="h-16 md:h-20 object-contain"
+/>
           </div>
 
           <nav className="hidden md:flex gap-8 text-white font-medium">
