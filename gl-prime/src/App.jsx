@@ -1,4 +1,7 @@
+import { useState } from 'react'
+
 export default function GLPrimeGroupSite() {
+  const [mensagemEnviada, setMensagemEnviada] = useState(false)
   return (
     <div className="font-sans bg-white text-gray-800 scroll-smooth">
       {/* Header */}
@@ -343,7 +346,11 @@ export default function GLPrimeGroupSite() {
               Formulário de Contato
             </h4>
 
-            <form className="space-y-5 mt-8">
+            <form className="space-y-5 mt-8"
+            onSubmit={(e) => {
+            e.preventDefault()
+           setMensagemEnviada(true) }}
+            >
               <input
                 type="text"
                 placeholder="Nome completo"
@@ -378,6 +385,11 @@ export default function GLPrimeGroupSite() {
               <button className="w-full bg-[#071B3B] hover:bg-[#0d2b57] transition text-white py-4 rounded-xl font-bold text-lg">
                 Enviar Solicitação
               </button>
+              {mensagemEnviada && (
+              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-4 rounded-xl mt-4 text-center font-semibold">
+             ✅ Obrigado pelo contato! Nossa equipe retornará em breve.
+             </div>
+                 )}
             </form>
           </div>
         </div>
