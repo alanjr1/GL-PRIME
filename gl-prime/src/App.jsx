@@ -18,7 +18,7 @@ export default function GLPrimeGroupSite() {
             <a href="#sobre" className="hover:text-yellow-400 transition">Sobre</a>
             <a href="#servicos" className="hover:text-yellow-400 transition">Serviços</a>
             <a href="#produtos" className="hover:text-yellow-400 transition">Produtos</a>
-            <a href="#portfolio" className="hover:text-yellow-400 transition">Portfólio</a>
+            <a href="#portifolio" className="hover:text-yellow-400 transition">Portifólio</a>
             <a href="#contato" className="hover:text-yellow-400 transition">Contato</a>
             <a href="#cliente" className="hover:text-yellow-400 transition">Área do Cliente</a>
           </nav>
@@ -221,7 +221,7 @@ export default function GLPrimeGroupSite() {
       </section>
 
       {/* Portfólio */}
-      <section id="portfolio" className="py-24 bg-gray-50">
+      <section id="portifolio" className="py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center max-w-3xl mx-auto">
             <span className="text-yellow-500 font-bold uppercase tracking-[3px]">
