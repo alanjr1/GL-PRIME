@@ -3,6 +3,8 @@ import { useState } from 'react'
 
 export default function GLPrimeGroupSite() {
   const [mensagemEnviada, setMensagemEnviada] = useState(false)
+const [logado, setLogado] = useState(false)
+const [modoCadastro, setModoCadastro] = useState(false)
   const [logado, setLogado] = useState(true)
   return (
     <div className="font-sans bg-white text-gray-800 scroll-smooth">
@@ -254,188 +256,244 @@ export default function GLPrimeGroupSite() {
         </div>
       </section>
 
-      {/* Área do Cliente */}/
+      {/* Área do Cliente */}
+<section id="cliente" className="py-24 bg-[#08172F] text-white">
 
-{logado && (
-<section id="cliente"
-
-className="py-24 bg-[#08172F] text-white">
   <div className="max-w-7xl mx-auto px-6">
 
-    <div className="flex flex-col md:flex-row gap-8">
+    {!logado ? (
 
-      {/* MENU */}
-      <div className="bg-[#071B3B] rounded-3xl p-6 w-full md:w-72 shadow-2xl">
+      /* LOGIN / CADASTRO */
+      <div className="max-w-5xl mx-auto bg-[#071B3B] rounded-3xl shadow-2xl overflow-hidden">
 
-        <h3 className="text-3xl font-bold text-yellow-400">
-          Área do Cliente
-        </h3>
+        <div className="grid md:grid-cols-2">
 
-        <p className="text-gray-400 mt-2">
-          Painel Premium
-        </p>
+          {/* ESQUERDA */}
+          <div className="p-12 flex flex-col justify-center">
 
-        <div className="mt-8 flex flex-col gap-4">
+            <span className="text-yellow-400 font-bold uppercase tracking-[3px]">
+              Área do Cliente
+            </span>
 
-          <button className="bg-yellow-400 text-[#071B3B] py-4 rounded-2xl font-bold">
-            Dashboard
-          </button>
-
-          <button className="bg-white/10 hover:bg-white/20 transition py-4 rounded-2xl">
-            Projetos
-          </button>
-
-          <button className="bg-white/10 hover:bg-white/20 transition py-4 rounded-2xl">
-            Financeiro
-          </button>
-
-          <button className="bg-white/10 hover:bg-white/20 transition py-4 rounded-2xl">
-            Documentos
-          </button>
-
-          <button className="bg-white/10 hover:bg-white/20 transition py-4 rounded-2xl">
-            Suporte
-          </button>
-
-         <button
-  onClick={() => setLogado(false)}
-  className="bg-red-500 hover:bg-red-600 transition py-4 rounded-2xl font-bold mt-4"
->
-            Sair
-          </button>
-
-        </div>
-      </div>
-
-      {/* CONTEÚDO */}
-      <div className="flex-1">
-
-        {/* TOPO */}
-        <div className="bg-[#071B3B] rounded-3xl p-8 shadow-2xl flex flex-col md:flex-row justify-between items-center gap-6">
-
-          <div>
-            <h3 className="text-4xl font-bold">
-              Bem-vindo, Alan 👋
+            <h3 className="text-5xl font-bold mt-6 leading-tight">
+              Plataforma Premium GL Prime
             </h3>
 
-            <p className="text-gray-400 mt-3">
-              Acompanhe seus projetos solares em tempo real.
+            <p className="text-gray-300 mt-6 text-lg leading-relaxed">
+              Acompanhe projetos, documentos, suporte técnico,
+              produção solar e informações financeiras em tempo real.
             </p>
+
+            <div className="mt-10 space-y-4">
+
+              <div className="bg-white/10 rounded-2xl p-5">
+                ⚡ Monitoramento Solar Inteligente
+              </div>
+
+              <div className="bg-white/10 rounded-2xl p-5">
+                📄 Documentos e Contratos
+              </div>
+
+              <div className="bg-white/10 rounded-2xl p-5">
+                💬 Suporte Exclusivo
+              </div>
+
+            </div>
           </div>
-         <div className="w-24 h-24 rounded-full border-4 border-yellow-400 bg-white flex items-center justify-center text-[#071B3B] text-4xl font-bold">
-         👤
-         </div>
+
+          {/* DIREITA */}
+          <div className="bg-white p-10 text-gray-800 flex flex-col justify-center">
+
+            <h4 className="text-4xl font-bold text-[#071B3B]">
+              {modoCadastro ? 'Criar Conta' : 'Entrar'}
+            </h4>
+
+            <p className="text-gray-500 mt-3">
+              {modoCadastro
+                ? 'Cadastre-se para acessar sua área exclusiva.'
+                : 'Acesse sua conta premium.'}
+            </p>
+
+            <form
+              className="space-y-5 mt-8"
+              onSubmit={(e) => {
+                e.preventDefault()
+                setLogado(true)
+              }}
+            >
+
+              {modoCadastro && (
+                <input
+                  type="text"
+                  placeholder="Nome completo"
+                  className="w-full border border-gray-300 rounded-2xl px-5 py-4 outline-none focus:border-yellow-400"
+                />
+              )}
+
+              <input
+                type="email"
+                placeholder="Seu e-mail"
+                className="w-full border border-gray-300 rounded-2xl px-5 py-4 outline-none focus:border-yellow-400"
+              />
+
+              <input
+                type="password"
+                placeholder="Sua senha"
+                className="w-full border border-gray-300 rounded-2xl px-5 py-4 outline-none focus:border-yellow-400"
+              />
+
+              {modoCadastro && (
+                <input
+                  type="password"
+                  placeholder="Confirmar senha"
+                  className="w-full border border-gray-300 rounded-2xl px-5 py-4 outline-none focus:border-yellow-400"
+                />
+              )}
+
+              <button className="w-full bg-yellow-400 hover:bg-yellow-300 transition py-4 rounded-2xl font-bold text-[#071B3B] text-lg">
+                {modoCadastro ? 'Criar Conta' : 'Entrar'}
+              </button>
+
+            </form>
+
+            <button
+              onClick={() => setModoCadastro(!modoCadastro)}
+              className="mt-6 text-[#071B3B] font-semibold hover:text-yellow-500 transition"
+            >
+              {modoCadastro
+                ? 'Já possui conta? Entrar'
+                : 'Não possui conta? Criar conta'}
+            </button>
+
+          </div>
         </div>
+      </div>
 
-        {/* CARDS */}
-        <div className="grid md:grid-cols-3 gap-6 mt-8">
+    ) : (
 
-          <div className="bg-[#071B3B] rounded-3xl p-6 shadow-xl">
-            <p className="text-gray-400">
-              Economia Total
-            </p>
+      /* DASHBOARD */
+      <div className="flex flex-col md:flex-row gap-8">
 
-            <h4 className="text-4xl font-bold text-yellow-400 mt-4">
-              --
-            </h4>
+        {/* MENU */}
+        <div className="bg-[#071B3B] rounded-3xl p-6 w-full md:w-72 shadow-2xl">
 
-            <p className="mt-3 text-gray-300">
-              Economia acumulada
-            </p>
-          </div>
-
-          <div className="bg-[#071B3B] rounded-3xl p-6 shadow-xl">
-            <p className="text-gray-400">
-              Produção Solar
-            </p>
-
-            <h4 className="text-4xl font-bold text-yellow-400 mt-4">
-              --
-            </h4>
-
-            <p className="mt-3 text-gray-300">
-              Últimos 30 dias
-            </p>
-          </div>
-
-          <div className="bg-[#071B3B] rounded-3xl p-6 shadow-xl">
-            <p className="text-gray-400">
-              Status do Sistema
-            </p>
-
-            <h4 className="text-4xl font-bold text-green-400 mt-4">
-              Ativo
-            </h4>
-
-            <p className="mt-3 text-gray-300">
-              Funcionando normalmente
-            </p>
-          </div>
-
-        </div>
-
-        {/* TABELA */}
-        <div className="bg-[#071B3B] rounded-3xl p-8 shadow-2xl mt-8">
-
-          <h3 className="text-3xl font-bold">
-            Últimas Faturas
+          <h3 className="text-3xl font-bold text-yellow-400">
+            Área do Cliente
           </h3>
 
-          <div className="overflow-x-auto mt-8">
+          <p className="text-gray-400 mt-2">
+            Painel Premium
+          </p>
 
-            <table className="w-full">
+          <div className="mt-8 flex flex-col gap-4">
 
-              <thead>
-                <tr className="text-left border-b border-white/10">
-                  <th className="pb-4">Mês</th>
-                  <th className="pb-4">Valor</th>
-                  <th className="pb-4">Status</th>
-                </tr>
-              </thead>
+            <button className="bg-yellow-400 text-[#071B3B] py-4 rounded-2xl font-bold">
+              Dashboard
+            </button>
 
-              <tbody>
+            <button className="bg-white/10 hover:bg-white/20 transition py-4 rounded-2xl">
+              Projetos
+            </button>
 
-                <tr className="border-b border-white/5">
-                  <td className="py-5">Janeiro</td>
-                  <td>R$ --</td>
-                  <td>
-                    <span className="bg-green-500/20 text-green-400 px-4 py-2 rounded-full">
-                      Pago
-                    </span>
-                  </td>
-                </tr>
+            <button className="bg-white/10 hover:bg-white/20 transition py-4 rounded-2xl">
+              Financeiro
+            </button>
 
-                <tr className="border-b border-white/5">
-                  <td className="py-5">Fevereiro</td>
-                  <td>R$ --</td>
-                  <td>
-                    <span className="bg-green-500/20 text-green-400 px-4 py-2 rounded-full">
-                      Pago
-                    </span>
-                  </td>
-                </tr>
+            <button className="bg-white/10 hover:bg-white/20 transition py-4 rounded-2xl">
+              Documentos
+            </button>
 
-                <tr>
-                  <td className="py-5">Março</td>
-                  <td>R$ --</td>
-                  <td>
-                    <span className="bg-yellow-500/20 text-yellow-400 px-4 py-2 rounded-full">
-                      Em análise
-                    </span>
-                  </td>
-                </tr>
+            <button className="bg-white/10 hover:bg-white/20 transition py-4 rounded-2xl">
+              Suporte
+            </button>
 
-              </tbody>
-
-            </table>
+            <button
+              onClick={() => setLogado(false)}
+              className="bg-red-500 hover:bg-red-600 transition py-4 rounded-2xl font-bold mt-4"
+            >
+              Sair
+            </button>
 
           </div>
+        </div>
+
+        {/* CONTEÚDO */}
+        <div className="flex-1">
+
+          <div className="bg-[#071B3B] rounded-3xl p-8 shadow-2xl flex justify-between items-center">
+
+            <div>
+              <h3 className="text-4xl font-bold">
+                Bem-vindo 👋
+              </h3>
+
+              <p className="text-gray-400 mt-3">
+                Acompanhe seus projetos solares.
+              </p>
+            </div>
+
+            <div className="w-24 h-24 rounded-full border-4 border-yellow-400 bg-white flex items-center justify-center text-[#071B3B] text-4xl font-bold">
+              👤
+            </div>
+
+          </div>
+
+          {/* CARDS */}
+          <div className="grid md:grid-cols-3 gap-6 mt-8">
+
+            <div className="bg-[#071B3B] rounded-3xl p-6 shadow-xl">
+              <p className="text-gray-400">
+                Economia Total
+              </p>
+
+              <h4 className="text-4xl font-bold text-yellow-400 mt-4">
+                --
+              </h4>
+
+              <p className="mt-3 text-gray-300">
+                Dados disponíveis após ativação
+              </p>
+            </div>
+
+            <div className="bg-[#071B3B] rounded-3xl p-6 shadow-xl">
+              <p className="text-gray-400">
+                Produção Solar
+              </p>
+
+              <h4 className="text-4xl font-bold text-yellow-400 mt-4">
+                --
+              </h4>
+
+              <p className="mt-3 text-gray-300">
+                Sistema aguardando sincronização
+              </p>
+            </div>
+
+            <div className="bg-[#071B3B] rounded-3xl p-6 shadow-xl">
+              <p className="text-gray-400">
+                Status do Sistema
+              </p>
+
+              <h4 className="text-4xl font-bold text-green-400 mt-4">
+                Ativo
+              </h4>
+
+              <p className="mt-3 text-gray-300">
+                Funcionando normalmente
+              </p>
+            </div>
+
+          </div>
+
         </div>
 
       </div>
-    </div>
+
+    )}
+
   </div>
-</section> )}
+
+</section>
       {/* Contato */}
       <section id="contato" className="py-24 bg-gray-100">
         <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-16 px-6 items-start">
