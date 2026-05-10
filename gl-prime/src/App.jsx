@@ -253,54 +253,185 @@ export default function GLPrimeGroupSite() {
         </div>
       </section>
 
-      {/* Área do Cliente */}
-      <section id="cliente" className="py-24 bg-white">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="bg-[#071B3B] rounded-3xl p-12 shadow-2xl text-white">
-            <div className="grid md:grid-cols-2 gap-10 items-center">
-              <div>
-                <span className="text-yellow-400 font-bold uppercase tracking-[3px]">
-                  Área do Cliente
-                </span>
+      {/* Área do Cliente */}/
+    {/* Área do Cliente */}
+<section id="cliente" className="py-24 bg-[#08172F] text-white">
+  <div className="max-w-7xl mx-auto px-6">
 
-                <h3 className="text-4xl font-bold mt-4">
-                  Acompanhe seus projetos e atendimento
-                </h3>
+    <div className="flex flex-col md:flex-row gap-8">
 
-                <p className="text-gray-300 mt-6 leading-relaxed">
-                  Faça login para acompanhar solicitações, documentos, propostas
-                  comerciais e agendamentos.
-                </p>
-              </div>
+      {/* MENU */}
+      <div className="bg-[#071B3B] rounded-3xl p-6 w-full md:w-72 shadow-2xl">
 
-              <div className="bg-white rounded-3xl p-8 text-gray-800">
-                <h4 className="text-2xl font-bold text-[#071B3B]">
-                  Entrar
-                </h4>
+        <h3 className="text-3xl font-bold text-yellow-400">
+          Área do Cliente
+        </h3>
 
-                <form className="mt-6 space-y-4">
-                  <input
-                    type="email"
-                    placeholder="Seu e-mail"
-                    className="w-full border border-gray-300 rounded-xl px-4 py-4 outline-none focus:border-yellow-400"
-                  />
+        <p className="text-gray-400 mt-2">
+          Painel Premium
+        </p>
 
-                  <input
-                    type="password"
-                    placeholder="Sua senha"
-                    className="w-full border border-gray-300 rounded-xl px-4 py-4 outline-none focus:border-yellow-400"
-                  />
+        <div className="mt-8 flex flex-col gap-4">
 
-                  <button className="w-full bg-yellow-400 hover:bg-yellow-300 transition py-4 rounded-xl font-bold text-[#071B3B]">
-                    Acessar Área do Cliente
-                  </button>
-                </form>
-              </div>
-            </div>
+          <button className="bg-yellow-400 text-[#071B3B] py-4 rounded-2xl font-bold">
+            Dashboard
+          </button>
+
+          <button className="bg-white/10 hover:bg-white/20 transition py-4 rounded-2xl">
+            Projetos
+          </button>
+
+          <button className="bg-white/10 hover:bg-white/20 transition py-4 rounded-2xl">
+            Financeiro
+          </button>
+
+          <button className="bg-white/10 hover:bg-white/20 transition py-4 rounded-2xl">
+            Documentos
+          </button>
+
+          <button className="bg-white/10 hover:bg-white/20 transition py-4 rounded-2xl">
+            Suporte
+          </button>
+
+          <button className="bg-red-500 hover:bg-red-600 transition py-4 rounded-2xl font-bold mt-4">
+            Sair
+          </button>
+
+        </div>
+      </div>
+
+      {/* CONTEÚDO */}
+      <div className="flex-1">
+
+        {/* TOPO */}
+        <div className="bg-[#071B3B] rounded-3xl p-8 shadow-2xl flex flex-col md:flex-row justify-between items-center gap-6">
+
+          <div>
+            <h3 className="text-4xl font-bold">
+              Bem-vindo, Alan 👋
+            </h3>
+
+            <p className="text-gray-400 mt-3">
+              Acompanhe seus projetos solares em tempo real.
+            </p>
+          </div>
+
+          <img
+            src="https://i.pravatar.cc/150"
+            alt="Cliente"
+            className="w-24 h-24 rounded-full border-4 border-yellow-400"
+          />
+        </div>
+
+        {/* CARDS */}
+        <div className="grid md:grid-cols-3 gap-6 mt-8">
+
+          <div className="bg-[#071B3B] rounded-3xl p-6 shadow-xl">
+            <p className="text-gray-400">
+              Economia Total
+            </p>
+
+            <h4 className="text-4xl font-bold text-yellow-400 mt-4">
+              R$ 18.540
+            </h4>
+
+            <p className="mt-3 text-gray-300">
+              Economia acumulada
+            </p>
+          </div>
+
+          <div className="bg-[#071B3B] rounded-3xl p-6 shadow-xl">
+            <p className="text-gray-400">
+              Produção Solar
+            </p>
+
+            <h4 className="text-4xl font-bold text-yellow-400 mt-4">
+              1.245 kWh
+            </h4>
+
+            <p className="mt-3 text-gray-300">
+              Últimos 30 dias
+            </p>
+          </div>
+
+          <div className="bg-[#071B3B] rounded-3xl p-6 shadow-xl">
+            <p className="text-gray-400">
+              Status do Sistema
+            </p>
+
+            <h4 className="text-4xl font-bold text-green-400 mt-4">
+              Ativo
+            </h4>
+
+            <p className="mt-3 text-gray-300">
+              Funcionando normalmente
+            </p>
+          </div>
+
+        </div>
+
+        {/* TABELA */}
+        <div className="bg-[#071B3B] rounded-3xl p-8 shadow-2xl mt-8">
+
+          <h3 className="text-3xl font-bold">
+            Últimas Faturas
+          </h3>
+
+          <div className="overflow-x-auto mt-8">
+
+            <table className="w-full">
+
+              <thead>
+                <tr className="text-left border-b border-white/10">
+                  <th className="pb-4">Mês</th>
+                  <th className="pb-4">Valor</th>
+                  <th className="pb-4">Status</th>
+                </tr>
+              </thead>
+
+              <tbody>
+
+                <tr className="border-b border-white/5">
+                  <td className="py-5">Janeiro</td>
+                  <td>R$ 520</td>
+                  <td>
+                    <span className="bg-green-500/20 text-green-400 px-4 py-2 rounded-full">
+                      Pago
+                    </span>
+                  </td>
+                </tr>
+
+                <tr className="border-b border-white/5">
+                  <td className="py-5">Fevereiro</td>
+                  <td>R$ 498</td>
+                  <td>
+                    <span className="bg-green-500/20 text-green-400 px-4 py-2 rounded-full">
+                      Pago
+                    </span>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td className="py-5">Março</td>
+                  <td>R$ 510</td>
+                  <td>
+                    <span className="bg-yellow-500/20 text-yellow-400 px-4 py-2 rounded-full">
+                      Em análise
+                    </span>
+                  </td>
+                </tr>
+
+              </tbody>
+
+            </table>
+
           </div>
         </div>
-      </section>
 
+      </div>
+    </div>
+  </div>
+</section>
       {/* Contato */}
       <section id="contato" className="py-24 bg-gray-100">
         <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-16 px-6 items-start">
