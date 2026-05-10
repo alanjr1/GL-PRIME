@@ -3,6 +3,7 @@ import { useState } from 'react'
 
 export default function GLPrimeGroupSite() {
   const [mensagemEnviada, setMensagemEnviada] = useState(false)
+  const [logado, setLogado] = useState(true)
   return (
     <div className="font-sans bg-white text-gray-800 scroll-smooth">
       {/* Header */}
@@ -254,8 +255,11 @@ export default function GLPrimeGroupSite() {
       </section>
 
       {/* Área do Cliente */}/
-    {/* Área do Cliente */}
-<section id="cliente" className="py-24 bg-[#08172F] text-white">
+
+{logado && (
+<section id="cliente"
+
+className="py-24 bg-[#08172F] text-white">
   <div className="max-w-7xl mx-auto px-6">
 
     <div className="flex flex-col md:flex-row gap-8">
@@ -293,7 +297,10 @@ export default function GLPrimeGroupSite() {
             Suporte
           </button>
 
-          <button className="bg-red-500 hover:bg-red-600 transition py-4 rounded-2xl font-bold mt-4">
+         <button
+  onClick={() => setLogado(false)}
+  className="bg-red-500 hover:bg-red-600 transition py-4 rounded-2xl font-bold mt-4"
+>
             Sair
           </button>
 
@@ -315,12 +322,9 @@ export default function GLPrimeGroupSite() {
               Acompanhe seus projetos solares em tempo real.
             </p>
           </div>
-
-          <img
-            src="https://i.pravatar.cc/150"
-            alt="Cliente"
-            className="w-24 h-24 rounded-full border-4 border-yellow-400"
-          />
+         <div className="w-24 h-24 rounded-full border-4 border-yellow-400 bg-white flex items-center justify-center text-[#071B3B] text-4xl font-bold">
+         👤
+         </div>
         </div>
 
         {/* CARDS */}
@@ -332,7 +336,7 @@ export default function GLPrimeGroupSite() {
             </p>
 
             <h4 className="text-4xl font-bold text-yellow-400 mt-4">
-              R$ 18.540
+              --
             </h4>
 
             <p className="mt-3 text-gray-300">
@@ -346,7 +350,7 @@ export default function GLPrimeGroupSite() {
             </p>
 
             <h4 className="text-4xl font-bold text-yellow-400 mt-4">
-              1.245 kWh
+              --
             </h4>
 
             <p className="mt-3 text-gray-300">
@@ -393,7 +397,7 @@ export default function GLPrimeGroupSite() {
 
                 <tr className="border-b border-white/5">
                   <td className="py-5">Janeiro</td>
-                  <td>R$ 520</td>
+                  <td>R$ --</td>
                   <td>
                     <span className="bg-green-500/20 text-green-400 px-4 py-2 rounded-full">
                       Pago
@@ -403,7 +407,7 @@ export default function GLPrimeGroupSite() {
 
                 <tr className="border-b border-white/5">
                   <td className="py-5">Fevereiro</td>
-                  <td>R$ 498</td>
+                  <td>R$ --</td>
                   <td>
                     <span className="bg-green-500/20 text-green-400 px-4 py-2 rounded-full">
                       Pago
@@ -413,7 +417,7 @@ export default function GLPrimeGroupSite() {
 
                 <tr>
                   <td className="py-5">Março</td>
-                  <td>R$ 510</td>
+                  <td>R$ --</td>
                   <td>
                     <span className="bg-yellow-500/20 text-yellow-400 px-4 py-2 rounded-full">
                       Em análise
@@ -431,7 +435,7 @@ export default function GLPrimeGroupSite() {
       </div>
     </div>
   </div>
-</section>
+</section> )}
       {/* Contato */}
       <section id="contato" className="py-24 bg-gray-100">
         <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-16 px-6 items-start">
