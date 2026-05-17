@@ -1,6 +1,6 @@
 import logo from './assets/Logo.png'
 import { useState, useEffect } from 'react'
-// 1. Importa a conexão com o banco e as funções do Firebase
+// Importa a conexão com o banco e as funções do Firebase
 import { db } from './firebase'
 import { collection, addDoc, doc, getDoc } from 'firebase/firestore'
 
@@ -9,7 +9,7 @@ export default function GLPrimeGroupSite() {
   const [logado, setLogado] = useState(false)
   const [carregando, setCarregando] = useState(false)
 
-  // 2. Estados para capturar os dados do formulário
+  // Estados para capturar os dados do formulário
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [telefone, setTelefone] = useState('')
@@ -23,7 +23,8 @@ export default function GLPrimeGroupSite() {
   const [erroCarregamento, setErroCarregamento] = useState(false)
   const [carregandoOrcamento, setCarregandoOrcamento] = useState(false)
 
-  // --- ESTADOS DO FAKE CHAT BOT INTERATIVO ---
+  // --- ESTADOS DO CHAT BOT INTERATIVO ---
+  const [isChatOpen, setIsChatOpen] = useState(false)
   const [messages, setMessages] = useState([
     { id: 1, sender: 'bot', text: 'Olá 👋 Como podemos ajudar?' },
     { id: 2, sender: 'user', text: 'Quero solicitar um orçamento.' }
@@ -55,7 +56,7 @@ export default function GLPrimeGroupSite() {
     }
   }, [])
 
-  // 3. Função que faz os cálculos com PRECIFICAÇÃO REGRESSIVA e envia para o Firebase
+  // Função que faz os cálculos com PRECIFICAÇÃO REGRESSIVA e envia para o Firebase
   const handleEnviarOrcamento = async (e) => {
     e.preventDefault()
     
@@ -87,7 +88,7 @@ export default function GLPrimeGroupSite() {
       } else if (potenciaSistemaKWp > 8 && potenciaSistemaKWp <= 15) {
         precoInstalacaoPorKWp = 3400 // Sistemas residenciais grandes
       } else if (potenciaSistemaKWp > 15 && potenciaSistemaKWp <= 30) {
-        precoInstalacaoPorKWp = 2900 // Sistemas comerciais de pequeno/médio porte (Caso da conta de R$2.000)
+        precoInstalacaoPorKWp = 2900 // Sistemas comerciais de pequeno/médio porte
       } else if (potenciaSistemaKWp > 30) {
         precoInstalacaoPorKWp = 2500 // Grandes usinas / sistemas industriais
       }
@@ -95,7 +96,10 @@ export default function GLPrimeGroupSite() {
       // Cálculo do valor total usando a faixa de preço corrigida
       const valorTotalEstimado = potenciaSistemaKWp * precoInstalacaoPorKWp
       const economiaMensal = valorContaNum * 0.95 // Economia real pode chegar a até 95%
+      
+      // FIX: Variável corrigida de economyMensal para economiaMensal para evitar quebras
       const paybackMeses = valorTotalEstimado / economiaMensal
+      const paybackAnos = parseFloat((paybackMeses / 12).toFixed(1))
 
       // Estrutura do documento que vai salvar no Firestore
       const novoOrcamento = {
@@ -115,14 +119,14 @@ export default function GLPrimeGroupSite() {
           quantidadePlacas: quantidadePlacas,
           valorTotalEstimado: parseFloat(valorTotalEstimado.toFixed(2)),
           paybackMeses: Math.ceil(paybackMeses),
-          paybackAnos: parseFloat((paybackMeses / 12).toFixed(1))
+          paybackAnos: paybackAnos
         },
         status: 'pendente'
       }
 
       // Salva na coleção "orcamentos" dentro do Cloud Firestore
       const docRef = await addDoc(collection(db, 'orcamentos'), novoOrcamento)
-      console.log('Orçamento salvo com ID: ', docRef.id)
+      console.log('Orçamento saved with ID: ', docRef.id)
 
       // Cria o link dinâmico usando a URL atual do sistema + o ID gerado na hora
       const urlGerada = `${window.location.origin}${window.location.pathname}?id=${docRef.id}`
@@ -231,7 +235,6 @@ export default function GLPrimeGroupSite() {
               </div>
 
               <div className="text-center pt-4">
-                {/* BOTÃO DO WHATSAPP DO CLIENTE DIRECIONADO PARA O SEU CONSULTOR */}
                 <a 
                   href={`https://wa.me/5511945922714?text=${encodeURIComponent(`Olá! Fiz a simulação no site e vi meu orçamento estimado (Código: ${idOrcamentoUrl}). Gostaria de falar com um consultor para negociar e dar andamento ao projeto! Link: ${window.location.href}`)}`}
                   target="_blank"
@@ -794,7 +797,7 @@ export default function GLPrimeGroupSite() {
           </h3>
 
           <p className="text-[#071B3B] text-lg mt-6 max-w-3xl mx-auto">
-            Transforme sua conta de energia in investimento sustentável.
+            Transforme sua conta de energia em investimento sustentável.
           </p>
 
           <a
@@ -843,56 +846,99 @@ export default function GLPrimeGroupSite() {
         </div>
       </footer>
 
-      {/* WHATSAPP FLOATING BUTTON */}
+      {/* WHATSAPP FLOATING BUTTON (ÍCONE OFICIAL E CORRIGIDO) */}
       <a
         href={`https://wa.me/5511945922714?text=${encodeURIComponent("Olá! Gostaria de solicitar um orçamento de energia solar.")}`}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Fale conosco pelo WhatsApp"
-        className="fixed bottom-6 right-6 bg-green-500 hover:bg-green-600 transition-all duration-300 hover:scale-110 w-16 h-16 rounded-full flex items-center justify-center text-white shadow-2xl z-50"
+        className="fixed bottom-6 left-6 bg-[#25D366] hover:bg-[#20ba5a] transition-all duration-300 hover:scale-110 w-16 h-16 rounded-full flex items-center justify-center text-white shadow-2xl z-50"
       >
-        <svg className="w-8 h-8 fill-current" viewBox="0 0 24 24">
-          <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.713-1.457L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.37 9.863-9.736.001-2.599-1.01-5.043-2.848-6.882-1.839-1.838-4.285-2.85-6.884-2.851-5.441 0-9.865 4.37-9.869 9.738-.001 1.761.461 3.477 1.336 4.981l-.988 3.608 3.692-.969zm11.722-6.812c-.302-.15-1.782-.88-2.056-.979-.275-.1-.475-.15-.674.15-.199.299-.772.979-.947 1.178-.175.199-.349.224-.651.074-1.203-.602-1.986-1.102-2.771-2.446-.207-.356.207-.33.593-1.096.11-.224.056-.422-.028-.572-.084-.15-.674-1.623-.924-2.224-.244-.588-.493-.508-.674-.517-.175-.008-.375-.01-.575-.01-.2 0-.525.075-.8.375-.276.3-.1.575-1.026 1.474-.925.9-2.5 1.349-2.775 1.724-.275.375-.036 2.254.165 2.524.2.27 3.41 5.204 8.261 7.299 1.154.498 2.056.796 2.756.998 1.16.368 2.217.316 3.051.191.929-.14 1.782-.729 2.032-1.399.25-.669.25-1.242.175-1.36-.075-.118-.275-.199-.576-.349z"/>
+        <svg 
+          xmlns="http://www.w3.org/2000/svg" 
+          viewBox="0 0 448 512" 
+          className="w-9 h-9 fill-current"
+        >
+          <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/>
         </svg>
       </a>
-
-      {/* INTERACTIVE FAKE CHAT BOT */}
-      <div className="fixed bottom-28 right-6 bg-white shadow-2xl rounded-3xl w-80 overflow-hidden hidden md:flex flex-col h-96 z-40 border border-gray-100">
-        <div className="bg-[#071B3B] text-white p-4 font-bold flex items-center gap-2 shadow-md">
-          <span className="w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse"></span>
-          <span>Atendimento Online</span>
-        </div>
-
-        <div className="flex-1 p-4 space-y-3 text-sm overflow-y-auto bg-gray-50">
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`rounded-2xl p-3 max-w-[85%] break-words shadow-sm ${
-                msg.sender === 'bot'
-                  ? 'bg-white text-gray-800 border border-gray-100'
-                  : 'bg-yellow-100 text-gray-900 ml-auto'
-              }`}
-            >
-              {msg.text}
-            </div>
-          ))}
-        </div>
-
-        <form onSubmit={handleSendChatMessage} className="border-t p-3 flex gap-2 bg-white">
-          <input
-            type="text"
-            placeholder="Digite sua mensagem..."
-            value={chatInput}
-            onChange={(e) => setChatInput(e.target.value)}
-            className="flex-1 border rounded-xl px-3 py-2 text-sm outline-none focus:border-[#071B3B] transition-all"
-          />
-          <button 
-            type="submit"
-            className="bg-yellow-400 hover:bg-yellow-500 transition-colors px-4 rounded-xl font-bold text-[#071B3B]"
+      
+      {/* INTERACTIVE FAKE CHAT BOT (COMEÇA FECHADO E ABRE DINAMICAMENTE) */}
+      <div className="fixed bottom-6 right-6 z-50 hidden md:flex flex-col items-end">
+        {/* Balão de Notificação do Chat (Exibido se o chat estiver fechado) */}
+        {!isChatOpen && (
+          <button
+            onClick={() => setIsChatOpen(true)}
+            className="mb-2 bg-white text-gray-800 font-medium px-4 py-2 rounded-2xl shadow-xl text-xs border border-gray-100 animate-bounce flex items-center gap-2"
           >
-            Enviar
+            <span>Dúvidas? Fale conosco! ☀️</span>
           </button>
-        </form>
+        )}
+
+        {/* Botão de abrir/fechar o círculo flutuante */}
+        {!isChatOpen ? (
+          <button
+            onClick={() => setIsChatOpen(true)}
+            aria-label="Abrir Chat de Atendimento"
+            className="bg-[#071B3B] hover:bg-[#0d2b57] text-white rounded-full w-16 h-16 flex items-center justify-center shadow-2xl transition duration-300 hover:scale-110"
+          >
+            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+          </button>
+        ) : (
+          /* Janela de Chat Aberta */
+          <div className="bg-white shadow-2xl rounded-3xl w-80 overflow-hidden flex flex-col h-96 border border-gray-100 transition-all duration-300">
+            {/* Header do Chat */}
+            <div className="bg-[#071B3B] text-white p-4 font-bold flex items-center justify-between shadow-md">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse"></span>
+                <span className="text-sm">Atendimento Online</span>
+              </div>
+              {/* Botão de fechar (X) */}
+              <button 
+                onClick={() => setIsChatOpen(false)}
+                className="text-gray-400 hover:text-white transition-colors text-sm font-semibold p-1"
+                title="Fechar Chat"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Mensagens */}
+            <div className="flex-1 p-4 space-y-3 text-sm overflow-y-auto bg-gray-50">
+              {messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`rounded-2xl p-3 max-w-[85%] break-words shadow-sm ${
+                    msg.sender === 'bot'
+                      ? 'bg-white text-gray-800 border border-gray-100'
+                      : 'bg-yellow-100 text-gray-900 ml-auto'
+                  }`}
+                >
+                  {msg.text}
+                </div>
+              ))}
+            </div>
+
+            {/* Input Form */}
+            <form onSubmit={handleSendChatMessage} className="border-t p-3 flex gap-2 bg-white">
+              <input
+                type="text"
+                placeholder="Digite sua mensagem..."
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                className="flex-1 border rounded-xl px-3 py-2 text-sm outline-none focus:border-[#071B3B] transition-all"
+              />
+              <button 
+                type="submit"
+                className="bg-yellow-400 hover:bg-yellow-500 transition-colors px-4 rounded-xl font-bold text-[#071B3B]"
+              >
+                Enviar
+              </button>
+            </form>
+          </div>
+        )}
       </div>
     </div>
   )
