@@ -1,21 +1,267 @@
 import logo from './assets/Logo.png'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+// 1. Importa a conexão com o banco e as funções do Firebase
+import { db } from './firebase'
+import { collection, addDoc, doc, getDoc } from 'firebase/firestore'
 
 export default function GLPrimeGroupSite() {
   const [mensagemEnviada, setMensagemEnviada] = useState(false)
   const [logado, setLogado] = useState(false)
+  const [carregando, setCarregando] = useState(false)
 
+  // 2. Estados para capturar os dados do formulário
+  const [nome, setNome] = useState('')
+  const [email, setEmail] = useState('')
+  const [telefone, setTelefone] = useState('')
+  const [tipoProjeto, setTipoProjeto] = useState('Residencial')
+  const [valorConta, setValorConta] = useState('')
+
+  // --- ESTADOS PARA LINK ÚNICO E CONTROLE DE TELA ---
+  const [linkOrcamento, setLinkOrcamento] = useState('')
+  const [idOrcamentoUrl, setIdOrcamentoUrl] = useState(null)
+  const [orcamentoCarregado, setOrcamentoCarregado] = useState(null)
+  const [erroCarregamento, setErroCarregamento] = useState(false)
+  const [carregandoOrcamento, setCarregandoOrcamento] = useState(false)
+
+  // --- ESTADOS DO FAKE CHAT BOT INTERATIVO ---
+  const [messages, setMessages] = useState([
+    { id: 1, sender: 'bot', text: 'Olá 👋 Como podemos ajudar?' },
+    { id: 2, sender: 'user', text: 'Quero solicitar um orçamento.' }
+  ])
+  const [chatInput, setChatInput] = useState('')
+
+  // EFFECT: Monitora se o cliente entrou por um link de orçamento (?id=...)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const idParam = params.get('id')
+    if (idParam) {
+      setIdOrcamentoUrl(idParam)
+      setCarregandoOrcamento(true)
+      
+      // Busca direto no Firestore pelo ID da URL
+      const docRef = doc(db, 'orcamentos', idParam)
+      getDoc(docRef).then((docSnap) => {
+        if (docSnap.exists()) {
+          setOrcamentoCarregado(docSnap.data())
+        } else {
+          setErroCarregamento(true)
+        }
+      }).catch((err) => {
+        console.error("Erro ao buscar orçamento do link:", err)
+        setErroCarregamento(true)
+      }).finally(() => {
+        setCarregandoOrcamento(false)
+      })
+    }
+  }, [])
+
+  // 3. Função que faz os cálculos com PRECIFICAÇÃO REGRESSIVA e envia para o Firebase
+  const handleEnviarOrcamento = async (e) => {
+    e.preventDefault()
+    
+    if (!nome || !email || !telefone || !valorConta) {
+      alert('Por favor, preencha todos os campos.')
+      return
+    }
+
+    setCarregando(true)
+
+    try {
+      // Regras e médias de mercado para o cálculo
+      const precoKwh = 0.85
+      const potenciaPlacaWp = 0.55 // Placa de 550Wp convertido para kWp (0.55)
+      const eficienciaSistema = 0.75
+      const irradiacaoDiaria = 4.8
+
+      // Execução das fórmulas matemáticas baseadas no valor informado pelo cliente
+      const valorContaNum = parseFloat(valorConta)
+      const consumoKwhEstimado = valorContaNum / precoKwh
+      const potenciaSistemaKWp = consumoKwhEstimado / (irradiacaoDiaria * 30 * eficienciaSistema)
+      const quantidadePlacas = Math.ceil(potenciaSistemaKWp / potenciaPlacaWp)
+
+      // --- CORREÇÃO DA REGRA DE PRECIFICAÇÃO REGRESSIVA (GANHO DE ESCALA) ---
+      let precoInstalacaoPorKWp = 4400 // Preço base para sistemas bem pequenos
+
+      if (potenciaSistemaKWp > 4 && potenciaSistemaKWp <= 8) {
+        precoInstalacaoPorKWp = 3800 // Sistemas residenciais médios
+      } else if (potenciaSistemaKWp > 8 && potenciaSistemaKWp <= 15) {
+        precoInstalacaoPorKWp = 3400 // Sistemas residenciais grandes
+      } else if (potenciaSistemaKWp > 15 && potenciaSistemaKWp <= 30) {
+        precoInstalacaoPorKWp = 2900 // Sistemas comerciais de pequeno/médio porte (Caso da conta de R$2.000)
+      } else if (potenciaSistemaKWp > 30) {
+        precoInstalacaoPorKWp = 2500 // Grandes usinas / sistemas industriais
+      }
+
+      // Cálculo do valor total usando a faixa de preço corrigida
+      const valorTotalEstimado = potenciaSistemaKWp * precoInstalacaoPorKWp
+      const economiaMensal = valorContaNum * 0.95 // Economia real pode chegar a até 95%
+      const paybackMeses = valorTotalEstimado / economiaMensal
+
+      // Estrutura do documento que vai salvar no Firestore
+      const novoOrcamento = {
+        dadosCliente: {
+          nome,
+          email,
+          telefone,
+          tipoProjeto,
+          criadoEm: new Date()
+        },
+        dadosEntrada: {
+          valorContaOriginal: valorContaNum,
+          consumoKwhEstimado: parseFloat(consumoKwhEstimado.toFixed(2))
+        },
+        resultadoOrcamento: {
+          potenciaSistemaKWp: parseFloat(potenciaSistemaKWp.toFixed(2)),
+          quantidadePlacas: quantidadePlacas,
+          valorTotalEstimado: parseFloat(valorTotalEstimado.toFixed(2)),
+          paybackMeses: Math.ceil(paybackMeses),
+          paybackAnos: parseFloat((paybackMeses / 12).toFixed(1))
+        },
+        status: 'pendente'
+      }
+
+      // Salva na coleção "orcamentos" dentro do Cloud Firestore
+      const docRef = await addDoc(collection(db, 'orcamentos'), novoOrcamento)
+      console.log('Orçamento salvo com ID: ', docRef.id)
+
+      // Cria o link dinâmico usando a URL atual do sistema + o ID gerado na hora
+      const urlGerada = `${window.location.origin}${window.location.pathname}?id=${docRef.id}`
+      setLinkOrcamento(urlGerada)
+
+      // Exibe a mensagem de sucesso e limpa os campos
+      setMensagemEnviada(true)
+      setNome('')
+      setEmail('')
+      setTelefone('')
+      setValorConta('')
+      
+    } catch (error) {
+      console.error('Erro ao salvar no Firebase:', error)
+      alert('Houve um erro ao processar o seu orçamento. Tente novamente.')
+    } finally {
+      setCarregando(false)
+    }
+  }
+
+  // Função para simular o envio de mensagem no chat falso
+  const handleSendChatMessage = (e) => {
+    e.preventDefault()
+    if (!chatInput.trim()) return
+
+    const userMessage = { id: Date.now(), sender: 'user', text: chatInput }
+    setMessages((prev) => [...prev, userMessage])
+    setChatInput('')
+
+    // Resposta simulada automatizada
+    setTimeout(() => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          sender: 'bot',
+          text: 'Entendido! Deixe seus dados no formulário de contato ao lado para gerar sua estimativa na hora, ou use o botão do WhatsApp se preferir falar direto com um consultor! ☀️'
+        }
+      ])
+    }, 1000)
+  }
+
+  // --- INTERCEPTAÇÃO DA TELA: Se houver ?id= na URL, carrega o painel limpo do orçamento ---
+  if (idOrcamentoUrl) {
+    return (
+      <div className="font-sans bg-[#071B3B] min-h-screen text-white flex flex-col items-center justify-center p-6">
+        <div className="max-w-3xl w-full bg-white text-gray-800 rounded-3xl p-8 md:p-12 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-3 bg-yellow-400"></div>
+          
+          <div className="text-center mb-8">
+            <img src={logo} alt="GL Prime Group" className="h-16 mx-auto object-contain bg-[#071B3B] p-2 rounded-xl mb-4" />
+            <h2 className="text-3xl font-bold text-[#071B3B]">Seu Orçamento Personalizado</h2>
+            <p className="text-gray-500 mt-2">Chave de acesso: <span className="font-mono text-xs bg-gray-100 p-1 rounded text-yellow-600">{idOrcamentoUrl}</span></p>
+          </div>
+
+          {carregandoOrcamento && (
+            <div className="text-center py-12">
+              <p className="text-xl font-semibold animate-pulse text-[#071B3B]">Buscando seus dados de economia solar...</p>
+            </div>
+          )}
+
+          {erroCarregamento && (
+            <div className="text-center py-12 text-red-600">
+              <p className="text-xl font-bold">Orçamento não encontrado.</p>
+              <p className="text-gray-500 mt-2">Verifique se o link está correto ou solicite um novo na nossa página principal.</p>
+              <a href={window.location.origin} className="inline-block mt-6 bg-[#071B3B] text-white px-6 py-3 rounded-xl font-bold">Voltar ao Início</a>
+            </div>
+          )}
+
+          {orcamentoCarregado && (
+            <div className="space-y-8">
+              <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+                <h3 className="text-lg font-bold text-[#071B3B] border-b pb-2 mb-4">Olá, {orcamentoCarregado.dadosCliente.nome}!</h3>
+                <p className="text-gray-600">Com base no valor da sua conta de luz atual de <strong>R$ {orcamentoCarregado.dadosEntrada.valorContaOriginal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong>, preparamos uma estimativa inicial para o seu projeto.</p>
+                <p className="text-sm text-amber-600 font-medium mt-2">⚠️ Atenção: Os valores abaixo são estimados. O projeto final e as condições comerciais serão validados com o nosso consultor.</p>
+              </div>
+
+              {/* Indicadores Principais */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-[#071B3B] text-white rounded-2xl p-6 text-center shadow-md">
+                  <p className="text-xs uppercase font-semibold text-yellow-400">Painéis Necessários</p>
+                  <h4 className="text-4xl font-extrabold mt-2">{orcamentoCarregado.resultadoOrcamento.quantidadePlacas}</h4>
+                  <p className="text-xs text-gray-300 mt-1">Placas Premium de 550Wp</p>
+                </div>
+
+                <div className="bg-yellow-400 text-[#071B3B] rounded-2xl p-6 text-center shadow-md">
+                  <p className="text-xs uppercase font-bold">Investimento Estimado</p>
+                  <h4 className="text-2xl font-extrabold mt-2">R$ {orcamentoCarregado.resultadoOrcamento.valorTotalEstimado.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</h4>
+                  <p className="text-xs font-medium mt-1">Kit + Engenharia + Instalação</p>
+                </div>
+
+                <div className="bg-green-100 text-green-800 rounded-2xl p-6 text-center shadow-md border border-green-200">
+                  <p className="text-xs uppercase font-bold">Retorno do Investimento</p>
+                  <h4 className="text-2xl font-extrabold mt-2">{orcamentoCarregado.resultadoOrcamento.paybackAnos} Anos</h4>
+                  <p className="text-xs text-green-600 mt-1">Prazo estimado de Payback</p>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6">
+                <h4 className="font-bold text-[#071B3B] mb-2">⚡ Resumo Técnico do Sistema</h4>
+                <ul className="text-sm text-gray-700 space-y-1">
+                  <li>• Potência total do system: <strong>{orcamentoCarregado.resultadoOrcamento.potenciaSistemaKWp} kWp</strong></li>
+                  <li>• Consumo mensal estimado: <strong>{orcamentoCarregado.dadosEntrada.consumoKwhEstimado} kWh</strong></li>
+                  <li>• Economia estimada na sua conta de luz: <strong className="text-green-600">Até 95% de redução</strong></li>
+                </ul>
+              </div>
+
+              <div className="text-center pt-4">
+                {/* BOTÃO DO WHATSAPP DO CLIENTE DIRECIONADO PARA O SEU CONSULTOR */}
+                <a 
+                  href={`https://wa.me/5511945922714?text=${encodeURIComponent(`Olá! Fiz a simulação no site e vi meu orçamento estimado (Código: ${idOrcamentoUrl}). Gostaria de falar com um consultor para negociar e dar andamento ao projeto! Link: ${window.location.href}`)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-block bg-green-500 hover:bg-green-600 text-white font-bold px-8 py-4 rounded-xl shadow-lg text-lg transition duration-300 transform hover:scale-105"
+                >
+                  💬 Negociar Projeto com Consultor no WhatsApp
+                </a>
+                <br />
+                <a href={window.location.origin} className="text-sm text-gray-400 hover:text-[#071B3B] underline inline-block mt-4">Solicitar outro orçamento</a>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // --- RETORNO DO SITE INSTITUCIONAL ---
   return (
-    <div className="font-sans bg-white text-gray-800 scroll-smooth">
+    <div className="font-sans bg-white text-gray-800 scroll-smooth relative min-h-screen">
       {/* Header */}
       <header className="fixed top-0 left-0 w-full bg-[#071B3B]/95 backdrop-blur-md z-50 shadow-lg">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
           <div>
-         <img
-            src={logo}
-            alt="GL Prime Group"
-           className="h-16 md:h-20 object-contain"
-/>
+            <img
+              src={logo}
+              alt="GL Prime Group"
+              className="h-16 md:h-20 object-contain"
+            />
           </div>
 
           <nav className="hidden md:flex gap-8 text-white font-medium">
@@ -62,6 +308,7 @@ export default function GLPrimeGroupSite() {
               <a
                 href="https://wa.me/5511945922714"
                 target="_blank"
+                rel="noreferrer"
                 className="border border-white text-white hover:bg-white hover:text-[#071B3B] transition px-8 py-4 rounded-xl font-semibold"
               >
                 Falar no WhatsApp
@@ -215,9 +462,9 @@ export default function GLPrimeGroupSite() {
                     Tecnologia de última geração para máxima eficiência e durabilidade.
                   </p>
 
-                  <button className="mt-6 bg-yellow-400 hover:bg-yellow-300 transition px-6 py-3 rounded-xl font-bold text-[#071B3B]">
+                  <a href="#contato" className="inline-block text-center mt-6 bg-yellow-400 hover:bg-yellow-300 transition px-6 py-3 rounded-xl font-bold text-[#071B3B]">
                     Solicitar Informações
-                  </button>
+                  </a>
                 </div>
               </div>
             ))}
@@ -256,202 +503,172 @@ export default function GLPrimeGroupSite() {
       </section>
 
       {/* Área do Cliente */}
-<section id="cliente" className="py-24 bg-white">
+      <section id="cliente" className="py-24 bg-white">
+        {!logado ? (
+          <div className="max-w-5xl mx-auto px-6">
+            <div className="bg-[#071B3B] rounded-3xl p-12 shadow-2xl text-white">
+              <div className="grid md:grid-cols-2 gap-10 items-center">
+                <div>
+                  <span className="text-yellow-400 font-bold uppercase tracking-[3px]">
+                    Área do Cliente
+                  </span>
 
-{!logado ? (
+                  <h3 className="text-4xl font-bold mt-4">
+                    Faça login ou crie sua conta
+                  </h3>
 
-<div className="max-w-5xl mx-auto px-6">
-  <div className="bg-[#071B3B] rounded-3xl p-12 shadow-2xl text-white">
+                  <p className="text-gray-300 mt-6 leading-relaxed">
+                    Acompanhe projetos, documentos, suporte e informações do seu sistema solar.
+                  </p>
+                </div>
 
-    <div className="grid md:grid-cols-2 gap-10 items-center">
+                <div className="bg-white rounded-3xl p-8 text-gray-800">
+                  <h4 className="text-2xl font-bold text-[#071B3B] mb-6">
+                    Entrar
+                  </h4>
 
-      <div>
-        <span className="text-yellow-400 font-bold uppercase tracking-[3px]">
-          Área do Cliente
-        </span>
+                  <form className="space-y-4">
+                    <input
+                      type="email"
+                      placeholder="Seu e-mail"
+                      className="w-full border border-gray-300 rounded-xl px-4 py-4"
+                    />
 
-        <h3 className="text-4xl font-bold mt-4">
-          Faça login ou crie sua conta
-        </h3>
+                    <input
+                      type="password"
+                      placeholder="Sua senha"
+                      className="w-full border border-gray-300 rounded-xl px-4 py-4"
+                    />
 
-        <p className="text-gray-300 mt-6 leading-relaxed">
-          Acompanhe projetos, documentos, suporte e informações do seu sistema solar.
-        </p>
-      </div>
+                    <button
+                      type="button"
+                      onClick={() => setLogado(true)}
+                      className="w-full bg-yellow-400 hover:bg-yellow-300 transition py-4 rounded-xl font-bold text-[#071B3B]"
+                    >
+                      Entrar
+                    </button>
+                  </form>
 
-      <div className="bg-white rounded-3xl p-8 text-gray-800">
+                  <div className="my-8 border-t"></div>
 
-        <h4 className="text-2xl font-bold text-[#071B3B] mb-6">
-          Entrar
-        </h4>
+                  <h4 className="text-2xl font-bold text-[#071B3B] mb-6">
+                    Criar Conta
+                  </h4>
 
-        <form className="space-y-4">
+                  <form className="space-y-4">
+                    <input
+                      type="text"
+                      placeholder="Nome completo"
+                      className="w-full border border-gray-300 rounded-xl px-4 py-4"
+                    />
 
-          <input
-            type="email"
-            placeholder="Seu e-mail"
-            className="w-full border border-gray-300 rounded-xl px-4 py-4"
-          />
+                    <input
+                      type="email"
+                      placeholder="Seu e-mail"
+                      className="w-full border border-gray-300 rounded-xl px-4 py-4"
+                    />
 
-          <input
-            type="password"
-            placeholder="Sua senha"
-            className="w-full border border-gray-300 rounded-xl px-4 py-4"
-          />
+                    <input
+                      type="password"
+                      placeholder="Crie uma senha"
+                      className="w-full border border-gray-300 rounded-xl px-4 py-4"
+                    />
 
-          <button
-            type="button"
-            onClick={() => setLogado(true)}
-            className="w-full bg-yellow-400 hover:bg-yellow-300 transition py-4 rounded-xl font-bold text-[#071B3B]"
-          >
-            Entrar
-          </button>
-        </form>
+                    <button
+                      type="button"
+                      onClick={() => setLogado(true)}
+                      className="w-full bg-[#071B3B] hover:bg-[#0d2b57] transition text-white py-4 rounded-xl font-bold"
+                    >
+                      Criar Conta
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="min-h-screen bg-[#08172F] text-white flex rounded-3xl overflow-hidden">
+            {/* Sidebar */}
+            <aside className="w-72 bg-[#071B3B] border-r border-white/10 p-6 hidden md:flex flex-col">
+              <div className="mb-10 text-center">
+                <div className="w-24 h-24 bg-white rounded-full mx-auto mb-4"></div>
+                <h1 className="text-2xl font-bold text-yellow-400">
+                  Cliente GL Prime
+                </h1>
+                <p className="text-gray-400 mt-2 text-sm">
+                  Área Premium
+                </p>
+              </div>
 
-        <div className="my-8 border-t"></div>
+              <nav className="space-y-3 flex-1">
+                <button className="w-full text-left px-5 py-4 rounded-2xl bg-yellow-400 text-[#071B3B] font-bold">
+                  Dashboard
+                </button>
 
-        <h4 className="text-2xl font-bold text-[#071B3B] mb-6">
-          Criar Conta
-        </h4>
+                <button className="w-full text-left px-5 py-4 rounded-2xl bg-white/5 hover:bg-white/10">
+                  Projetos
+                </button>
 
-        <form className="space-y-4">
+                <button className="w-full text-left px-5 py-4 rounded-2xl bg-white/5 hover:bg-white/10">
+                  Financeiro
+                </button>
 
-          <input
-            type="text"
-            placeholder="Nome completo"
-            className="w-full border border-gray-300 rounded-xl px-4 py-4"
-          />
+                <button className="w-full text-left px-5 py-4 rounded-2xl bg-white/5 hover:bg-white/10">
+                  Suporte
+                </button>
+              </nav>
 
-          <input
-            type="email"
-            placeholder="Seu e-mail"
-            className="w-full border border-gray-300 rounded-xl px-4 py-4"
-          />
+              <button
+                onClick={() => setLogado(false)}
+                className="bg-red-500 hover:bg-red-600 transition py-4 rounded-2xl font-bold mt-8"
+              >
+                Sair
+              </button>
+            </aside>
 
-          <input
-            type="password"
-            placeholder="Crie uma senha"
-            className="w-full border border-gray-300 rounded-xl px-4 py-4"
-          />
+            {/* Conteúdo */}
+            <main className="flex-1 p-10">
+              <h2 className="text-4xl font-bold">
+                Dashboard
+              </h2>
 
-          <button
-            type="button"
-            onClick={() => setLogado(true)}
-            className="w-full bg-[#071B3B] hover:bg-[#0d2b57] transition text-white py-4 rounded-xl font-bold"
-          >
-            Criar Conta
-          </button>
+              <p className="text-gray-400 mt-3">
+                Bem-vindo à área premium da GL Prime Group.
+              </p>
 
-        </form>
+              <div className="grid md:grid-cols-3 gap-6 mt-10">
+                <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
+                  <p className="text-gray-400">
+                    Últimas Faturas
+                  </p>
+                  <h3 className="text-2xl font-bold text-yellow-400 mt-4">
+                    Disponíveis
+                  </h3>
+                </div>
 
-      </div>
+                <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
+                  <p className="text-gray-400">
+                    Economia Total
+                  </p>
+                  <h3 className="text-2xl font-bold text-yellow-400 mt-4">
+                    Em análise
+                  </h3>
+                </div>
 
-    </div>
+                <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
+                  <p className="text-gray-400">
+                    Energia Acumulada
+                  </p>
+                  <h3 className="text-2xl font-bold text-yellow-400 mt-4">
+                    Atualizando
+                  </h3>
+                </div>
+              </div>
+            </main>
+          </div>
+        )}
+      </section>
 
-  </div>
-</div>
-
-) : (
-
-<div className="min-h-screen bg-[#08172F] text-white flex rounded-3xl overflow-hidden">
-
-  {/* Sidebar */}
-  <aside className="w-72 bg-[#071B3B] border-r border-white/10 p-6 hidden md:flex flex-col">
-
-    <div className="mb-10 text-center">
-
-      <div className="w-24 h-24 bg-white rounded-full mx-auto mb-4"></div>
-
-      <h1 className="text-2xl font-bold text-yellow-400">
-        Cliente GL Prime
-      </h1>
-
-      <p className="text-gray-400 mt-2 text-sm">
-        Área Premium
-      </p>
-    </div>
-
-    <nav className="space-y-3 flex-1">
-
-      <button className="w-full text-left px-5 py-4 rounded-2xl bg-yellow-400 text-[#071B3B] font-bold">
-        Dashboard
-      </button>
-
-      <button className="w-full text-left px-5 py-4 rounded-2xl bg-white/5 hover:bg-white/10">
-        Projetos
-      </button>
-
-      <button className="w-full text-left px-5 py-4 rounded-2xl bg-white/5 hover:bg-white/10">
-        Financeiro
-      </button>
-
-      <button className="w-full text-left px-5 py-4 rounded-2xl bg-white/5 hover:bg-white/10">
-        Suporte
-      </button>
-
-    </nav>
-
-    <button
-      onClick={() => setLogado(false)}
-      className="bg-red-500 hover:bg-red-600 transition py-4 rounded-2xl font-bold mt-8"
-    >
-      Sair
-    </button>
-
-  </aside>
-
-  {/* Conteúdo */}
-  <main className="flex-1 p-10">
-
-    <h2 className="text-4xl font-bold">
-      Dashboard
-    </h2>
-
-    <p className="text-gray-400 mt-3">
-      Bem-vindo à área premium da GL Prime Group.
-    </p>
-
-    <div className="grid md:grid-cols-3 gap-6 mt-10">
-
-      <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
-        <p className="text-gray-400">
-          Últimas Faturas
-        </p>
-
-        <h3 className="text-2xl font-bold text-yellow-400 mt-4">
-          Disponíveis
-        </h3>
-      </div>
-
-      <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
-        <p className="text-gray-400">
-          Economia Total
-        </p>
-
-        <h3 className="text-2xl font-bold text-yellow-400 mt-4">
-          Em análise
-        </h3>
-      </div>
-
-      <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
-        <p className="text-gray-400">
-          Energia Acumulada
-        </p>
-
-        <h3 className="text-2xl font-bold text-yellow-400 mt-4">
-          Atualizando
-        </h3>
-      </div>
-
-    </div>
-
-  </main>
-
-</div>
-
-)}
-
-</section>
       {/* Contato */}
       <section id="contato" className="py-24 bg-gray-100">
         <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-16 px-6 items-start">
@@ -497,50 +714,73 @@ export default function GLPrimeGroupSite() {
               Formulário de Contato
             </h4>
 
-            <form className="space-y-5 mt-8"
-            onSubmit={(e) => {
-            e.preventDefault()
-           setMensagemEnviada(true) }}
-            >
+            <form className="space-y-5 mt-8" onSubmit={handleEnviarOrcamento}>
               <input
                 type="text"
                 placeholder="Nome completo"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
                 className="w-full border border-gray-300 rounded-xl px-5 py-4 outline-none focus:border-yellow-400"
               />
 
               <input
                 type="email"
                 placeholder="Seu e-mail"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full border border-gray-300 rounded-xl px-5 py-4 outline-none focus:border-yellow-400"
               />
 
               <input
                 type="tel"
-                placeholder="Telefone"
+                placeholder="Telefone / WhatsApp"
+                value={telefone}
+                onChange={(e) => setTelefone(e.target.value)}
                 className="w-full border border-gray-300 rounded-xl px-5 py-4 outline-none focus:border-yellow-400"
               />
 
-              <select className="w-full border border-gray-300 rounded-xl px-5 py-4 outline-none focus:border-yellow-400">
-                <option>Selecione o tipo de projeto</option>
-                <option>Residencial</option>
-                <option>Rural</option>
-                <option>Comercial</option>
+              <select 
+                value={tipoProjeto}
+                onChange={(e) => setTipoProjeto(e.target.value)}
+                className="w-full border border-gray-300 rounded-xl px-5 py-4 outline-none focus:border-yellow-400 bg-white"
+              >
+                <option value="Residencial">Residencial</option>
+                <option value="Rural">Rural</option>
+                <option value="Comercial">Comercial</option>
               </select>
 
-              <textarea
-                rows="5"
-                placeholder="Descreva sua necessidade"
+              <input
+                type="number"
+                placeholder="Valor médio da sua conta de luz (R$)"
+                value={valorConta}
+                onChange={(e) => setValorConta(e.target.value)}
                 className="w-full border border-gray-300 rounded-xl px-5 py-4 outline-none focus:border-yellow-400"
-              ></textarea>
+              />
 
-              <button className="w-full bg-[#071B3B] hover:bg-[#0d2b57] transition text-white py-4 rounded-xl font-bold text-lg">
-                Enviar Solicitação
+              <button 
+                type="submit"
+                disabled={carregando}
+                className="w-full bg-[#071B3B] hover:bg-[#0d2b57] disabled:bg-gray-400 transition text-white py-4 rounded-xl font-bold text-lg"
+              >
+                {carregando ? 'Processando Orçamento...' : 'Enviar Solicitação'}
               </button>
+
+              {/* MENSAGEM DO FORMULÁRIO COM O BOTÃO AZUL DE REDIRECIONAMENTO DIRETO */}
               {mensagemEnviada && (
-              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-4 rounded-xl mt-4 text-center font-semibold">
-             ✅ Obrigado pelo contato! Nossa equipe retornará em breve.
-             </div>
-                 )}
+                <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-5 rounded-xl mt-4 text-center space-y-3">
+                  <p className="font-bold">✅ Orçamento calculado com sucesso!</p>
+                  <p className="text-xs text-gray-600">Seu painel exclusivo de economia já está disponível.</p>
+                  
+                  <a 
+                    href={linkOrcamento}
+                    className="inline-block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition text-sm shadow-md"
+                  >
+                    ☀️ Acessar Meu Orçamento Agora
+                  </a>
+
+                  <p className="text-[10px] text-gray-500">Se preferir, salve o link de acesso direto: <br/> <span className="font-mono bg-white p-1 rounded inline-block mt-1 select-all">{linkOrcamento}</span></p>
+                </div>
+              )}
             </form>
           </div>
         </div>
@@ -554,12 +794,13 @@ export default function GLPrimeGroupSite() {
           </h3>
 
           <p className="text-[#071B3B] text-lg mt-6 max-w-3xl mx-auto">
-            Transforme sua conta de energia em investimento sustentável.
+            Transforme sua conta de energia in investimento sustentável.
           </p>
 
           <a
             href="https://wa.me/5511945922714"
             target="_blank"
+            rel="noreferrer"
             className="inline-block mt-8 bg-[#071B3B] hover:bg-[#0d2b57] transition text-white px-10 py-5 rounded-2xl font-bold text-lg shadow-lg"
           >
             Falar com Especialista
@@ -567,12 +808,12 @@ export default function GLPrimeGroupSite() {
         </div>
       </section>
 
-      {/* Footer */}
+      {/* FOOTER */}
       <footer className="bg-[#041022] text-gray-300 py-10">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between gap-10">
           <div>
             <h4 className="text-2xl font-bold text-white">GL PRIME GROUP</h4>
-            <p className="mt-4 max-w-md leading-relaxed">
+            <p className="mt-4 max-w-md leading-relaxed text-gray-400">
               Soluções premium em energia solar para residências, empresas e propriedades rurais.
             </p>
           </div>
@@ -589,7 +830,7 @@ export default function GLPrimeGroupSite() {
 
           <div>
             <h5 className="text-white font-bold text-lg">Contato</h5>
-            <div className="mt-4 space-y-2">
+            <div className="mt-4 space-y-2 text-gray-400">
               <p>(11) 94592-2714</p>
               <p>contato@glprimegroup.com</p>
               <p>Suzano - SP</p>
@@ -602,42 +843,56 @@ export default function GLPrimeGroupSite() {
         </div>
       </footer>
 
-      {/* WhatsApp Floating Button */}
+      {/* WHATSAPP FLOATING BUTTON */}
       <a
-        href="https://wa.me/5511945922714"
+        href={`https://wa.me/5511945922714?text=${encodeURIComponent("Olá! Gostaria de solicitar um orçamento de energia solar.")}`}
         target="_blank"
-        className="fixed bottom-6 right-6 bg-green-500 hover:bg-green-600 transition w-16 h-16 rounded-full flex items-center justify-center text-white text-3xl shadow-2xl z-50"
+        rel="noopener noreferrer"
+        aria-label="Fale conosco pelo WhatsApp"
+        className="fixed bottom-6 right-6 bg-green-500 hover:bg-green-600 transition-all duration-300 hover:scale-110 w-16 h-16 rounded-full flex items-center justify-center text-white shadow-2xl z-50"
       >
-        💬
+        <svg className="w-8 h-8 fill-current" viewBox="0 0 24 24">
+          <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.713-1.457L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.37 9.863-9.736.001-2.599-1.01-5.043-2.848-6.882-1.839-1.838-4.285-2.85-6.884-2.851-5.441 0-9.865 4.37-9.869 9.738-.001 1.761.461 3.477 1.336 4.981l-.988 3.608 3.692-.969zm11.722-6.812c-.302-.15-1.782-.88-2.056-.979-.275-.1-.475-.15-.674.15-.199.299-.772.979-.947 1.178-.175.199-.349.224-.651.074-1.203-.602-1.986-1.102-2.771-2.446-.207-.356.207-.33.593-1.096.11-.224.056-.422-.028-.572-.084-.15-.674-1.623-.924-2.224-.244-.588-.493-.508-.674-.517-.175-.008-.375-.01-.575-.01-.2 0-.525.075-.8.375-.276.3-.1.575-1.026 1.474-.925.9-2.5 1.349-2.775 1.724-.275.375-.036 2.254.165 2.524.2.27 3.41 5.204 8.261 7.299 1.154.498 2.056.796 2.756.998 1.16.368 2.217.316 3.051.191.929-.14 1.782-.729 2.032-1.399.25-.669.25-1.242.175-1.36-.075-.118-.275-.199-.576-.349z"/>
+        </svg>
       </a>
 
-      {/* Fake Chat Bot */}
-      <div className="fixed bottom-28 right-6 bg-white shadow-2xl rounded-3xl w-80 overflow-hidden hidden md:block z-40">
-        <div className="bg-[#071B3B] text-white p-4 font-bold">
-          Atendimento Online
+      {/* INTERACTIVE FAKE CHAT BOT */}
+      <div className="fixed bottom-28 right-6 bg-white shadow-2xl rounded-3xl w-80 overflow-hidden hidden md:flex flex-col h-96 z-40 border border-gray-100">
+        <div className="bg-[#071B3B] text-white p-4 font-bold flex items-center gap-2 shadow-md">
+          <span className="w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse"></span>
+          <span>Atendimento Online</span>
         </div>
 
-        <div className="p-4 space-y-3 text-sm">
-          <div className="bg-gray-100 rounded-2xl p-3 w-fit max-w-[80%]">
-            Olá 👋 Como podemos ajudar?
-          </div>
-
-          <div className="bg-yellow-100 rounded-2xl p-3 ml-auto w-fit max-w-[80%]">
-            Quero solicitar um orçamento.
-          </div>
+        <div className="flex-1 p-4 space-y-3 text-sm overflow-y-auto bg-gray-50">
+          {messages.map((msg) => (
+            <div
+              key={msg.id}
+              className={`rounded-2xl p-3 max-w-[85%] break-words shadow-sm ${
+                msg.sender === 'bot'
+                  ? 'bg-white text-gray-800 border border-gray-100'
+                  : 'bg-yellow-100 text-gray-900 ml-auto'
+              }`}
+            >
+              {msg.text}
+            </div>
+          ))}
         </div>
 
-        <div className="border-t p-3 flex gap-2">
+        <form onSubmit={handleSendChatMessage} className="border-t p-3 flex gap-2 bg-white">
           <input
             type="text"
-            placeholder="Digite sua mensagem"
-            className="flex-1 border rounded-xl px-3 py-2 text-sm outline-none"
+            placeholder="Digite sua mensagem..."
+            value={chatInput}
+            onChange={(e) => setChatInput(e.target.value)}
+            className="flex-1 border rounded-xl px-3 py-2 text-sm outline-none focus:border-[#071B3B] transition-all"
           />
-
-          <button className="bg-yellow-400 px-4 rounded-xl font-bold text-[#071B3B]">
+          <button 
+            type="submit"
+            className="bg-yellow-400 hover:bg-yellow-500 transition-colors px-4 rounded-xl font-bold text-[#071B3B]"
+          >
             Enviar
           </button>
-        </div>
+        </form>
       </div>
     </div>
   )
