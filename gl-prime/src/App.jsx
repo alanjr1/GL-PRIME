@@ -1,4 +1,12 @@
-import logo from './assets/Logo.png'
+import logo from './assets/logo.png'
+import imgEmpresa from './assets/empresa.png'
+import imgInversor from './assets/inversor.png'
+import imgKitSolar from './assets/kitsolar.png'
+import imgPainelPremium from './assets/painelpremium.png'
+import imgRural from './assets/rural.png'
+import imgSlogam from './assets/slogam.png'
+import imgSolucao from './assets/solucao.png'
+
 import { useState, useEffect } from 'react'
 // Importa a conexão com o banco e as funções do Firebase
 import { db } from './firebase'
@@ -39,7 +47,6 @@ export default function GLPrimeGroupSite() {
       setIdOrcamentoUrl(idParam)
       setCarregandoOrcamento(true)
       
-      // Busca direto no Firestore pelo ID da URL
       const docRef = doc(db, 'orcamentos', idParam)
       getDoc(docRef).then((docSnap) => {
         if (docSnap.exists()) {
@@ -56,7 +63,6 @@ export default function GLPrimeGroupSite() {
     }
   }, [])
 
-  // Função que faz os cálculos com PRECIFICAÇÃO REGRESSIVA e envia para o Firebase
   const handleEnviarOrcamento = async (e) => {
     e.preventDefault()
     
@@ -68,40 +74,33 @@ export default function GLPrimeGroupSite() {
     setCarregando(true)
 
     try {
-      // Regras e médias de mercado para o cálculo
       const precoKwh = 0.85
-      const potenciaPlacaWp = 0.55 // Placa de 550Wp convertido para kWp (0.55)
+      const potenciaPlacaWp = 0.55
       const eficienciaSistema = 0.75
       const irradiacaoDiaria = 4.8
 
-      // Execução das fórmulas matemáticas baseadas no valor informado pelo cliente
       const valorContaNum = parseFloat(valorConta)
       const consumoKwhEstimado = valorContaNum / precoKwh
       const potenciaSistemaKWp = consumoKwhEstimado / (irradiacaoDiaria * 30 * eficienciaSistema)
       const quantidadePlacas = Math.ceil(potenciaSistemaKWp / potenciaPlacaWp)
 
-      // --- CORREÇÃO DA REGRA DE PRECIFICAÇÃO REGRESSIVA (GANHO DE ESCALA) ---
-      let precoInstalacaoPorKWp = 4400 // Preço base para sistemas bem pequenos
+      let precoInstalacaoPorKWp = 4400
 
       if (potenciaSistemaKWp > 4 && potenciaSistemaKWp <= 8) {
-        precoInstalacaoPorKWp = 3800 // Sistemas residenciais médios
+        precoInstalacaoPorKWp = 3800
       } else if (potenciaSistemaKWp > 8 && potenciaSistemaKWp <= 15) {
-        precoInstalacaoPorKWp = 3400 // Sistemas residenciais grandes
+        precoInstalacaoPorKWp = 3400
       } else if (potenciaSistemaKWp > 15 && potenciaSistemaKWp <= 30) {
-        precoInstalacaoPorKWp = 2900 // Sistemas comerciais de pequeno/médio porte
+        precoInstalacaoPorKWp = 2900
       } else if (potenciaSistemaKWp > 30) {
-        precoInstalacaoPorKWp = 2500 // Grandes usinas / sistemas industriais
+        precoInstalacaoPorKWp = 2500
       }
 
-      // Cálculo do valor total usando a faixa de preço corrigida
       const valorTotalEstimado = potenciaSistemaKWp * precoInstalacaoPorKWp
-      const economiaMensal = valorContaNum * 0.95 // Economia real pode chegar a até 95%
-      
-      // FIX: Variável corrigida de economyMensal para economiaMensal para evitar quebras
+      const economiaMensal = valorContaNum * 0.95
       const paybackMeses = valorTotalEstimado / economiaMensal
       const paybackAnos = parseFloat((paybackMeses / 12).toFixed(1))
 
-      // Estrutura do documento que vai salvar no Firestore
       const novoOrcamento = {
         dadosCliente: {
           nome,
@@ -124,15 +123,12 @@ export default function GLPrimeGroupSite() {
         status: 'pendente'
       }
 
-      // Salva na coleção "orcamentos" dentro do Cloud Firestore
       const docRef = await addDoc(collection(db, 'orcamentos'), novoOrcamento)
       console.log('Orçamento saved with ID: ', docRef.id)
 
-      // Cria o link dinâmico usando a URL atual do sistema + o ID gerado na hora
       const urlGerada = `${window.location.origin}${window.location.pathname}?id=${docRef.id}`
       setLinkOrcamento(urlGerada)
 
-      // Exibe a mensagem de sucesso e limpa os campos
       setMensagemEnviada(true)
       setNome('')
       setEmail('')
@@ -147,7 +143,6 @@ export default function GLPrimeGroupSite() {
     }
   }
 
-  // Função para simular o envio de mensagem no chat falso
   const handleSendChatMessage = (e) => {
     e.preventDefault()
     if (!chatInput.trim()) return
@@ -156,7 +151,6 @@ export default function GLPrimeGroupSite() {
     setMessages((prev) => [...prev, userMessage])
     setChatInput('')
 
-    // Resposta simulada automatizada
     setTimeout(() => {
       setMessages((prev) => [
         ...prev,
@@ -169,7 +163,7 @@ export default function GLPrimeGroupSite() {
     }, 1000)
   }
 
-  // --- INTERCEPTAÇÃO DA TELA: Se houver ?id= na URL, carrega o painel limpo do orçamento ---
+  // --- TELA DE ORÇAMENTO PELO LINK ---
   if (idOrcamentoUrl) {
     return (
       <div className="font-sans bg-[#071B3B] min-h-screen text-white flex flex-col items-center justify-center p-6">
@@ -204,7 +198,6 @@ export default function GLPrimeGroupSite() {
                 <p className="text-sm text-amber-600 font-medium mt-2">⚠️ Atenção: Os valores abaixo são estimados. O projeto final e as condições comerciais serão validados com o nosso consultor.</p>
               </div>
 
-              {/* Indicadores Principais */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-[#071B3B] text-white rounded-2xl p-6 text-center shadow-md">
                   <p className="text-xs uppercase font-semibold text-yellow-400">Painéis Necessários</p>
@@ -228,7 +221,7 @@ export default function GLPrimeGroupSite() {
               <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6">
                 <h4 className="font-bold text-[#071B3B] mb-2">⚡ Resumo Técnico do Sistema</h4>
                 <ul className="text-sm text-gray-700 space-y-1">
-                  <li>• Potência total do system: <strong>{orcamentoCarregado.resultadoOrcamento.potenciaSistemaKWp} kWp</strong></li>
+                  <li>• Potência total do sistema: <strong>{orcamentoCarregado.resultadoOrcamento.potenciaSistemaKWp} kWp</strong></li>
                   <li>• Consumo mensal estimado: <strong>{orcamentoCarregado.dadosEntrada.consumoKwhEstimado} kWh</strong></li>
                   <li>• Economia estimada na sua conta de luz: <strong className="text-green-600">Até 95% de redução</strong></li>
                 </ul>
@@ -253,7 +246,7 @@ export default function GLPrimeGroupSite() {
     )
   }
 
-  // --- RETORNO DO SITE INSTITUCIONAL ---
+  // --- SITE INSTITUCIONAL ---
   return (
     <div className="font-sans bg-white text-gray-800 scroll-smooth relative min-h-screen">
       {/* Header */}
@@ -320,9 +313,10 @@ export default function GLPrimeGroupSite() {
           </div>
 
           <div className="relative">
+            {/* ✅ SUBSTITUÍDO: foto residencial com painéis solares */}
             <img
-              src="https://images.unsplash.com/photo-1509391366360-2e959784a276?q=80&w=1400&auto=format&fit=crop"
-              alt="Energia Solar"
+              src={imgRural}
+              alt="Energia Solar Residencial"
               className="rounded-3xl shadow-2xl object-cover h-[550px] w-full"
             />
 
@@ -337,10 +331,11 @@ export default function GLPrimeGroupSite() {
       {/* Sobre */}
       <section id="sobre" className="py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-14 items-center px-6">
+          {/* ✅ SUBSTITUÍDO: fachada da empresa GL Prime */}
           <img
-            src="https://images.unsplash.com/photo-1497436072909-60f360e1d4b1?q=80&w=1200&auto=format&fit=crop"
-            alt="Equipe Solar"
-            className="rounded-3xl shadow-xl"
+            src={imgEmpresa}
+            alt="GL Prime Group - Empresa"
+            className="rounded-3xl shadow-xl object-cover h-[450px] w-full"
           />
 
           <div>
@@ -441,24 +436,25 @@ export default function GLPrimeGroupSite() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 mt-16">
+            {/* ✅ SUBSTITUÍDO: cada produto com sua imagem própria */}
             {[
-              'Painéis Solares Premium',
-              'Inversores Inteligentes',
-              'Kits Solares Completos',
+              { nome: 'Painéis Solares Premium', img: imgPainelPremium },
+              { nome: 'Inversores Inteligentes', img: imgInversor },
+              { nome: 'Kits Solares Completos', img: imgKitSolar },
             ].map((produto, index) => (
               <div
                 key={index}
                 className="bg-white text-gray-800 rounded-3xl overflow-hidden shadow-2xl"
               >
                 <img
-                  src="https://images.unsplash.com/photo-1592833159155-c62df1b65634?q=80&w=1200&auto=format&fit=crop"
-                  alt={produto}
+                  src={produto.img}
+                  alt={produto.nome}
                   className="h-56 w-full object-cover"
                 />
 
                 <div className="p-8">
                   <h4 className="text-2xl font-bold text-[#071B3B]">
-                    {produto}
+                    {produto.nome}
                   </h4>
 
                   <p className="text-gray-600 mt-4">
@@ -488,15 +484,16 @@ export default function GLPrimeGroupSite() {
             </h3>
           </div>
 
+          {/* ✅ SUBSTITUÍDO: 3 imagens diferentes no portfólio */}
           <div className="grid md:grid-cols-3 gap-8 mt-16">
-            {[1, 2, 3].map((item) => (
+            {[imgRural, imgEmpresa, imgSolucao].map((img, index) => (
               <div
-                key={item}
+                key={index}
                 className="overflow-hidden rounded-3xl shadow-xl group"
               >
                 <img
-                  src="https://images.unsplash.com/photo-1509391366360-2e959784a276?q=80&w=1400&auto=format&fit=crop"
-                  alt="Projeto Solar"
+                  src={img}
+                  alt={`Projeto Solar ${index + 1}`}
                   className="h-80 w-full object-cover group-hover:scale-110 transition duration-500"
                 />
               </div>
@@ -591,34 +588,18 @@ export default function GLPrimeGroupSite() {
           </div>
         ) : (
           <div className="min-h-screen bg-[#08172F] text-white flex rounded-3xl overflow-hidden">
-            {/* Sidebar */}
             <aside className="w-72 bg-[#071B3B] border-r border-white/10 p-6 hidden md:flex flex-col">
               <div className="mb-10 text-center">
                 <div className="w-24 h-24 bg-white rounded-full mx-auto mb-4"></div>
-                <h1 className="text-2xl font-bold text-yellow-400">
-                  Cliente GL Prime
-                </h1>
-                <p className="text-gray-400 mt-2 text-sm">
-                  Área Premium
-                </p>
+                <h1 className="text-2xl font-bold text-yellow-400">Cliente GL Prime</h1>
+                <p className="text-gray-400 mt-2 text-sm">Área Premium</p>
               </div>
 
               <nav className="space-y-3 flex-1">
-                <button className="w-full text-left px-5 py-4 rounded-2xl bg-yellow-400 text-[#071B3B] font-bold">
-                  Dashboard
-                </button>
-
-                <button className="w-full text-left px-5 py-4 rounded-2xl bg-white/5 hover:bg-white/10">
-                  Projetos
-                </button>
-
-                <button className="w-full text-left px-5 py-4 rounded-2xl bg-white/5 hover:bg-white/10">
-                  Financeiro
-                </button>
-
-                <button className="w-full text-left px-5 py-4 rounded-2xl bg-white/5 hover:bg-white/10">
-                  Suporte
-                </button>
+                <button className="w-full text-left px-5 py-4 rounded-2xl bg-yellow-400 text-[#071B3B] font-bold">Dashboard</button>
+                <button className="w-full text-left px-5 py-4 rounded-2xl bg-white/5 hover:bg-white/10">Projetos</button>
+                <button className="w-full text-left px-5 py-4 rounded-2xl bg-white/5 hover:bg-white/10">Financeiro</button>
+                <button className="w-full text-left px-5 py-4 rounded-2xl bg-white/5 hover:bg-white/10">Suporte</button>
               </nav>
 
               <button
@@ -629,42 +610,22 @@ export default function GLPrimeGroupSite() {
               </button>
             </aside>
 
-            {/* Conteúdo */}
             <main className="flex-1 p-10">
-              <h2 className="text-4xl font-bold">
-                Dashboard
-              </h2>
-
-              <p className="text-gray-400 mt-3">
-                Bem-vindo à área premium da GL Prime Group.
-              </p>
+              <h2 className="text-4xl font-bold">Dashboard</h2>
+              <p className="text-gray-400 mt-3">Bem-vindo à área premium da GL Prime Group.</p>
 
               <div className="grid md:grid-cols-3 gap-6 mt-10">
                 <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
-                  <p className="text-gray-400">
-                    Últimas Faturas
-                  </p>
-                  <h3 className="text-2xl font-bold text-yellow-400 mt-4">
-                    Disponíveis
-                  </h3>
+                  <p className="text-gray-400">Últimas Faturas</p>
+                  <h3 className="text-2xl font-bold text-yellow-400 mt-4">Disponíveis</h3>
                 </div>
-
                 <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
-                  <p className="text-gray-400">
-                    Economia Total
-                  </p>
-                  <h3 className="text-2xl font-bold text-yellow-400 mt-4">
-                    Em análise
-                  </h3>
+                  <p className="text-gray-400">Economia Total</p>
+                  <h3 className="text-2xl font-bold text-yellow-400 mt-4">Em análise</h3>
                 </div>
-
                 <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
-                  <p className="text-gray-400">
-                    Energia Acumulada
-                  </p>
-                  <h3 className="text-2xl font-bold text-yellow-400 mt-4">
-                    Atualizando
-                  </h3>
+                  <p className="text-gray-400">Energia Acumulada</p>
+                  <h3 className="text-2xl font-bold text-yellow-400 mt-4">Atualizando</h3>
                 </div>
               </div>
             </main>
@@ -694,17 +655,14 @@ export default function GLPrimeGroupSite() {
                 <strong className="text-[#071B3B]">Telefone:</strong>
                 <p>(11) 94592-2714</p>
               </div>
-
               <div>
                 <strong className="text-[#071B3B]">E-mail:</strong>
                 <p>contato@glprimegroup.com</p>
               </div>
-
               <div>
                 <strong className="text-[#071B3B]">Endereço:</strong>
                 <p>Rua Portugal Freixo, 101</p>
               </div>
-
               <div>
                 <strong className="text-[#071B3B]">Instagram:</strong>
                 <p>@glprimegroup</p>
@@ -768,7 +726,6 @@ export default function GLPrimeGroupSite() {
                 {carregando ? 'Processando Orçamento...' : 'Enviar Solicitação'}
               </button>
 
-              {/* MENSAGEM DO FORMULÁRIO COM O BOTÃO AZUL DE REDIRECIONAMENTO DIRETO */}
               {mensagemEnviada && (
                 <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-5 rounded-xl mt-4 text-center space-y-3">
                   <p className="font-bold">✅ Orçamento calculado com sucesso!</p>
@@ -811,7 +768,7 @@ export default function GLPrimeGroupSite() {
         </div>
       </section>
 
-      {/* FOOTER */}
+      {/* Footer */}
       <footer className="bg-[#041022] text-gray-300 py-10">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between gap-10">
           <div>
@@ -846,7 +803,7 @@ export default function GLPrimeGroupSite() {
         </div>
       </footer>
 
-      {/* WHATSAPP FLOATING BUTTON (ÍCONE OFICIAL E CORRIGIDO) */}
+      {/* WhatsApp Floating Button */}
       <a
         href={`https://wa.me/5511945922714?text=${encodeURIComponent("Olá! Gostaria de solicitar um orçamento de energia solar.")}`}
         target="_blank"
@@ -863,9 +820,8 @@ export default function GLPrimeGroupSite() {
         </svg>
       </a>
       
-      {/* INTERACTIVE FAKE CHAT BOT (COMEÇA FECHADO E ABRE DINAMICAMENTE) */}
+      {/* Chat Bot */}
       <div className="fixed bottom-6 right-6 z-50 hidden md:flex flex-col items-end">
-        {/* Balão de Notificação do Chat (Exibido se o chat estiver fechado) */}
         {!isChatOpen && (
           <button
             onClick={() => setIsChatOpen(true)}
@@ -875,7 +831,6 @@ export default function GLPrimeGroupSite() {
           </button>
         )}
 
-        {/* Botão de abrir/fechar o círculo flutuante */}
         {!isChatOpen ? (
           <button
             onClick={() => setIsChatOpen(true)}
@@ -887,15 +842,12 @@ export default function GLPrimeGroupSite() {
             </svg>
           </button>
         ) : (
-          /* Janela de Chat Aberta */
           <div className="bg-white shadow-2xl rounded-3xl w-80 overflow-hidden flex flex-col h-96 border border-gray-100 transition-all duration-300">
-            {/* Header do Chat */}
             <div className="bg-[#071B3B] text-white p-4 font-bold flex items-center justify-between shadow-md">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse"></span>
                 <span className="text-sm">Atendimento Online</span>
               </div>
-              {/* Botão de fechar (X) */}
               <button 
                 onClick={() => setIsChatOpen(false)}
                 className="text-gray-400 hover:text-white transition-colors text-sm font-semibold p-1"
@@ -905,7 +857,6 @@ export default function GLPrimeGroupSite() {
               </button>
             </div>
 
-            {/* Mensagens */}
             <div className="flex-1 p-4 space-y-3 text-sm overflow-y-auto bg-gray-50">
               {messages.map((msg) => (
                 <div
@@ -921,7 +872,6 @@ export default function GLPrimeGroupSite() {
               ))}
             </div>
 
-            {/* Input Form */}
             <form onSubmit={handleSendChatMessage} className="border-t p-3 flex gap-2 bg-white">
               <input
                 type="text"
