@@ -875,7 +875,7 @@ export default function GLPrimeGroupSite() {
             <form onSubmit={handleSendChatMessage} className="border-t p-3 flex gap-2 bg-white">
               <input
                 type="text"
-                placeholder="Digite sua mensagem...."
+                placeholder="Digite sua mensagem..."
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 className="flex-1 border rounded-xl px-3 py-2 text-sm outline-none focus:border-[#071B3B] transition-all"
