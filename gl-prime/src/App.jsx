@@ -855,7 +855,7 @@ export default function GLPrimeGroupSite() {
               >
                 ✕
               </button>
-            </div>
+            </div>  
 
             <div className="flex-1 p-4 space-y-3 text-sm overflow-y-auto bg-gray-50">
               {messages.map((msg) => (
