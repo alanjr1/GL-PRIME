@@ -34,7 +34,7 @@ export default function GLPrimeGroupSite() {
   // --- ESTADOS DO CHAT BOT INTERATIVO ---
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [messages, setMessages] = useState([
-    { id: 1, sender: 'bot', text: 'Olá 👋 Como podemos ajudar?' },
+    { id: 1, sender: 'bot', text: 'Olá 👋 Como podemos ajudr?' },
     { id: 2, sender: 'user', text: 'Quero solicitar um orçamento.' }
   ])
   const [chatInput, setChatInput] = useState('')
