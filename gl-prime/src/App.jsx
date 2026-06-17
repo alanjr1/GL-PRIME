@@ -1,11 +1,11 @@
 import logo from './assets/logo.png'
-import imgEmpresa from './assets/empresa.png'
-import imgInversor from './assets/inversor.png'
-import imgKitSolar from './assets/kitsolar.png'
-import imgPainelPremium from './assets/painelpremium.png'
+import imgEmpresa from './assets/solucao.png'
+import imgInversor from './assets/inversores.jpeg'
+import imgKitSolar from './assets/kittssolares.jpeg'
+import imgPainelPremium from './assets/paineissolares.jpeg'
 import imgRural from './assets/rural.png'
 import imgSlogam from './assets/slogam.png'
-import imgSolucao from './assets/solucao.png'
+import imgSolucao from './assets/casa.jpeg'
 
 import { useState, useEffect } from 'react'
 // Importa a conexão com o banco e as funções do Firebase
@@ -601,7 +601,7 @@ export default function GLPrimeGroupSite() {
                 <button className="w-full text-left px-5 py-4 rounded-2xl bg-white/5 hover:bg-white/10">Financeiro</button>
                 <button className="w-full text-left px-5 py-4 rounded-2xl bg-white/5 hover:bg-white/10">Suporte</button>
               </nav>
-
+          
               <button
                 onClick={() => setLogado(false)}
                 className="bg-red-500 hover:bg-red-600 transition py-4 rounded-2xl font-bold mt-8"
